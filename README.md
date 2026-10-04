@@ -75,6 +75,21 @@ sudo chown root:root node_modules/electron/dist/chrome-sandbox
 sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
 ```
 
+### Sık çıkan hata: EACCES (permission denied)
+
+```
+EACCES: permission denied, unlink 'dist/assets/index-....css'
+```
+
+`dist/` veya `node_modules/` içindeki dosyaların bir kısmı `root`'a
+ait. `npm` ve `vite` bunları silemez/değiştiremez. `kur.sh` bunu
+`npm install`'dan **önce** otomatik düzeltir; elle çalışıyorsan:
+
+```bash
+sudo chown -R $USER:$USER dist node_modules
+bash kur.sh
+```
+
 ### Paket oluşturma
 
 ```bash

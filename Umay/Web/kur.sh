@@ -96,10 +96,79 @@ echo ""
 # --- 3. Bağımlılıklar -------------------------------------------------------
 echo "── 3/5  Bağımlılıklar kuruluyor"
 
+# Sahiplik düzeltmesi — `npm install` ÖNCESİ çalışmalı
+#
+# BELİRTİ (2026-10-05): kurulumda şu hata ölçüldü:
+#
+#   ✗ Bağımlılık kurulumu başarısız.        (node_modules root'a aitken)
+#   EACCES: permission denied, unlink 'dist/assets/index-....css'
+#
+# Sebebi: `dist/` ve `node_modules/` içindeki dosyaların bir kısmı
+# root'a ait. npm ve Vite bunları değiştiremez/silemez.
+#
+# NEDEN root'a ait olduğunu bilmiyoruz. Bu betiğin kendi yaptığı
+# `chown` yalnızca `node_modules/electron/dist/chrome-sandbox`
+# dosyasına dokunuyor; `Umay/Web/dist` ile karıştırılmamalı.
+# Muhtemel neden daha önce `sudo` ile çalıştırılmış bir `npm` komutu.
+# Sebebi doğrulayamadık; bu yüzden belirtiyi düzeltiyoruz.
+#
+# NEDEN BURADA, DERLEME ÖNCESİ DEĞİL
+#
+# Ölçüldü: `node_modules` root'a aitken `npm install` zaten
+# başarısız oluyor. Düzeltme derlemeden sonra gelirse kurulum
+# adım 3'te ölüyor. Bu yüzden bağımlılık kurulumundan önce çalışıyor
+# ve hem `npm install`'ı hem derlemeyi koruyor.
+#
+# TESPİT NEDEN `-w` DEĞİL
+#
+# Dizin sahibi kullanıcıya aitse ama içindeki dosyalar root'a aitse
+# `[ -w dizin ]` TRUE döner (üstüne yazılabilir) ama Vite'in silmesi
+# yine de EACCES verir. Bu sessiz hatayı önlemek için asıl sinyali
+# kullanıyoruz: sahiplik (`find ! -user`).
+#
+# HIZ
+#
+# `node_modules/` on binlerce dosya içerir. Yalnızca gerçekten yabancı
+# sahipli dosya varsa `chown -R` çalıştırıyoruz, her seferinde değil.
+# İlk taramada `find ... -quit` yalnızca tek dosya bulup durur.
+if [ "$(id -u)" != "0" ]; then SUDO="sudo"; else SUDO=""; fi
+BEN="$(id -un):$(id -gn)"
+
+sahipli_duzelt() {
+    yol="$1"
+
+    # Klasör yoksa (taze klon) sorun yok.
+    [ -d "$yol" ] || return 0
+
+    # İlk dosya bile kullanıcıya aitse sorun yok, chown'a gerek yok.
+    if [ -z "$(find "$yol" ! -user "$(id -un)" -print -quit 2>/dev/null)" ]; then
+        return 0
+    fi
+
+    bilgi "$yol/ içinde root'a ait dosyalar var, düzeltiliyor..."
+    $SUDO chown -R "$BEN" "$yol" 2>/dev/null || true
+
+    if [ -z "$(find "$yol" ! -user "$(id -un)" -print -quit 2>/dev/null)" ]; then
+        ok "$yol/ düzeltildi"
+        return 0
+    fi
+
+    hata "$yol/ düzeltilemedi. Elle deneyin:"
+    echo "     sudo chown -R \$USER:\$USER $yol"
+    return 1
+}
+
+sahipli_duzelt "node_modules"
+sahipli_duzelt "dist"
+
 # Electron'un postinstall'ı npm 11+'da varsayılan engellenir.
 # Bu yüzden betiği elle çalıştıracağız.
 UMAY_SANDBOX_SKIP=1 npm install --no-audit --no-fund || {
     hata "Bağımlılık kurulumu başarısız."
+    echo ""
+    bilgi "EACCES (permission denied) aldıysanız:"
+    echo "     sudo chown -R \$USER:\$USER node_modules dist"
+    echo "     bash kur.sh"
     exit 1
 }
 ok "npm install tamam"
@@ -157,10 +226,17 @@ echo ""
 # --- 5. Arayüz derleme --------------------------------------------------------
 echo "── 5/5  Arayüz derleniyor"
 
-npm run build || {
+# Sahiplik burada DÜZELTİLMİYOR — adım 3'te, `npm install`'dan önce
+# yapıldı. Adım 3, `node_modules`'a yazmak zorunda; düzeltme orada
+# olmazsa kurulum daha ilk adımda ölüyor.
+if ! npm run build; then
     hata "Derleme başarısız."
+    echo ""
+    bilgi "EACCES (permission denied) aldıysanız:"
+    echo "     sudo chown -R \$USER:\$USER dist node_modules"
+    echo "     bash kur.sh"
     exit 1
-}
+fi
 ok "derlendi (dist/)"
 
 # --- Hazır --------------------------------------------------------------------
