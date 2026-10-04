@@ -13,6 +13,8 @@
     "preview": "vite preview --host 0.0.0.0 --port 9056",
     "verify:plugins": "node scripts/verify-plugin-center.mjs",
     "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/fix-sandbox.mjs",
+    "sandbox:duzelt": "node scripts/fix-sandbox.mjs",
     "uygulama": "electron .",
     "paket:linux": "electron-builder --linux AppImage deb",
     "paket:mac": "electron-builder --mac",
@@ -30,8 +32,8 @@
     "@types/node": "^22.10.2",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
-    "electron": "^33.4.11",
-    "electron-builder": "^25.1.8",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "playwright": "^1.63.0"
   },
   "build": {

@@ -26,11 +26,31 @@ kullanıcının bilgisayarda olmaz.
 ### Ubuntu
 
 ```bash
-# Geliştirme modu
-npm install
+npm install        # Electron indirir, sandbox izinlerini düzeltir
 npm run build
 npm run uygulama
 ```
+
+**İlk kurulumda şifre sorulabilir** — `npm install` sonunda çalışan
+sandbox düzeltmesi `sudo` ister. Bu normaldir.
+
+Elle düzeltmek gerekirse:
+
+```bash
+npm run sandbox:duzelt
+```
+
+Bu komut şunu yapar ve uygulama ancak bundan sonra başlar:
+
+```bash
+sudo chown root:root node_modules/electron/dist/chrome-sandbox
+sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+```
+
+Neden gerekli: `npm install` her çalıştığında bu dosyanın `setuid`
+bitini düşürüyor. Bit olmadan Electron güvenlikten ödün vermeyi
+reddeder ve uygulamayı başlatmaz. `postinstall` betiği bunu
+otomatik düzeltir.
 
 ### Paket oluşturma
 
@@ -40,7 +60,8 @@ npm run paket:mac      # .dmg
 npm run paket:win      # .nsis + portable
 ```
 
-Çıktılar `release/` klasörüne düşer.
+Çıktılar `release/` klasörüne düşer. Paketlenmiş uygulamalarda sandbox
+sorunu olmaz — `electron-builder` doğru izinlerle paketler.
 
 ## İlk çalıştırma
 
