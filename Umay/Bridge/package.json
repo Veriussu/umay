@@ -1,0 +1,22 @@
+{
+  "name": "umay-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Umay local bridge supervisor for user-installed plugins.",
+  "scripts": {
+    "bootstrap": "node src/index.mjs bootstrap",
+    "install:bridge": "node src/index.mjs install",
+    "pair": "node src/index.mjs pair",
+    "connect": "node src/index.mjs connect",
+    "start": "node src/index.mjs start",
+    "stop": "node src/index.mjs stop",
+    "status": "node src/index.mjs status",
+    "doctor": "node src/index.mjs doctor",
+    "uninstall:bridge": "node src/index.mjs uninstall",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

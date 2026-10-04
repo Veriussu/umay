@@ -1,0 +1,30 @@
+# Bağımlılıklar
+node_modules/
+.venv/
+venv/
+
+# Derleme çıktıları
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Sırlar — ASLA gönderilmez
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Çalışma artıkları
+*.log
+.DS_Store
+Thumbs.db
+coverage/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Yerel ayarlar
+.umay/

@@ -1,0 +1,66 @@
+{
+  "name": "umay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Umay — yapay zeka asistanı (masaüstü uygulaması)",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 9056",
+    "start": "node scripts/start.mjs",
+    "stop": "node scripts/stop.mjs",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 9056",
+    "verify:plugins": "node scripts/verify-plugin-center.mjs",
+    "typecheck": "tsc --noEmit",
+    "uygulama": "electron .",
+    "paket:linux": "electron-builder --linux AppImage deb",
+    "paket:mac": "electron-builder --mac",
+    "paket:win": "electron-builder --win nsis portable"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "lucide-react": "^0.468.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "19.0.7",
+    "@types/react-dom": "19.0.3",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "playwright": "^1.63.0"
+  },
+  "build": {
+    "appId": "com.umay.desktop",
+    "productName": "Umay",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "Bridge/src/**/*",
+      "Bridge/package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
+  }
+}
