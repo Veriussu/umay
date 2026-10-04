@@ -105,3 +105,79 @@ export async function ayarlariYaz(ayarlar: Record<string, unknown>): Promise<boo
 export const TARAYICI_UYARISI =
   "Bu özellik masaüstü uygulamasında çalışır. Tarayıcıdan yalnızca sohbet, " +
   "hafıza ve arama özelliklerini kullanabilirsiniz.";
+
+// ------------------------------------------------------------------ cihaz
+
+/**
+ * Cihaz (bilgisayar) bağlantısı.
+ *
+ * NEDEN VAR
+ *
+ * Ölçüm (2026-10-05): kullanıcı "dosya oluştur" dedi → plan oluştu,
+ * planning bitti, computer görevi QUEUED kaldı. Nedeni:
+ *
+ *   agent_devices → 0 kayıt    (cihaz eşleşmemiş)
+ *   main.cjs      → 0 spawn     (Electron Bridge'ı başlatmıyor)
+ *
+ * Bu yüzden "Umay senin bilgisayarını kullansın" zinciri kopuktu.
+ * Kanal backend'da hazırdı; masan ucu yoktu.
+ *
+ * AKIŞ
+ *
+ *   Giriş yap → token al → Bridge'ı başlat → cihaz eşleşir →
+ *   backend artık bu bilgisayara komut gönderebilir
+ *
+ * Token YALNIZCA burada, eşleştirme anında kullanılır. Durum
+ * sorgusunda token DÖNMEZ.
+ */
+
+export type CihazDurumu = {
+  kurulu: boolean;
+  calisiyor: boolean;
+  deviceId: number | null;
+  cihazAdi: string | null;
+  platform: string | null;
+  eşlesTarih?: string | null;
+  sonKomut?: string | null;
+  sonHata?: string[];
+};
+
+export type BaglatmaSonucu = {
+  basarili: boolean;
+  neden?: string;
+  mesaj?: string;
+  stdout?: string;
+  stderr?: string;
+  hata?: string | null;
+  durum?: CihazDurumu;
+  gunluk?: string[];
+  /** Bağlantı neden kurulamadıysa son günlük satırları (token içermez). */
+  sonHata?: string[];
+};
+
+/** Cihazın backend'e eşleşip eşleşmediğini oku. */
+export async function cihazDurumuOku(): Promise<CihazDurumu | null> {
+  if (!masaustuMu()) return null;
+  try {
+    return (await window.umay!.bridgeDurum()) as CihazDurumu;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Cihazı backend'e eşleştir ve komut kanalını aç.
+ *
+ * Token'lar `api.ts`'teki `localStorage`'dan gelir; giriş yapılmamışsa
+ * bu çağrı yapılmamalı.
+ */
+export async function cihazBaglat(access: string | null, refresh: string | null): Promise<BaglatmaSonucu | null> {
+  if (!masaustuMu()) return null;
+  return (await window.umay!.bridgeBaslat(access, refresh)) as BaglatmaSonucu;
+}
+
+/** Cihaz bağlantısını kapat. */
+export async function cihazBaglantiKapat(): Promise<BaglatmaSonucu | null> {
+  if (!masaustuMu()) return null;
+  return (await window.umay!.bridgeDurdur()) as BaglatmaSonucu;
+}

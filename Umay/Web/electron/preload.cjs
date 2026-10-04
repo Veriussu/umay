@@ -33,6 +33,24 @@ contextBridge.exposeInMainWorld("umay", {
   ayarlarOku: () => ipcRenderer.invoke("umay:ayarlar-oku"),
   ayarlarYaz: (ayarlar) => ipcRenderer.invoke("umay:ayarlar-yaz", ayarlar),
 
+  /**
+   * Cihazı backend'e eşleştir ve komut kanalını aç.
+   *
+   * Token'lar arayüzden geliyor çünkü giriş bilgisi orada
+   * (`localStorage`). Ana süreç bunları komut satırına YAZMAZ —
+   * `ps` herkese görünür. Ortam değişkeniyle geçer.
+   *
+   * Dönen sonuçta token YOK.
+   */
+  bridgeBaslat: (accessToken, refreshToken) =>
+    ipcRenderer.invoke("umay:bridge-baslat", { accessToken, refreshToken }),
+
+  /** Cihaz durumu (token içermez). */
+  bridgeDurum: () => ipcRenderer.invoke("umay:bridge-durum"),
+
+  /** Cihaz bağlantısını kapat. */
+  bridgeDurdur: () => ipcRenderer.invoke("umay:bridge-durdur"),
+
   /** Masaüstü uygulamasında mıyız? (tarayıcıda false) */
   masaustu: true,
 });

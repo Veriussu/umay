@@ -26,6 +26,21 @@ export interface UmayDesktopBridge {
   panoya(metin: string): Promise<Record<string, unknown>>;
   ayarlarOku(): Promise<Record<string, unknown>>;
   ayarlarYaz(ayarlar: Record<string, unknown>): Promise<boolean>;
+
+  /**
+   * Cihazı backend'e eşleştir, komut kanalını aç.
+   * Token'lar giriş anında verilir; sonuçta token DÖNMEZ.
+   */
+  bridgeBaslat(
+    accessToken: string | null,
+    refreshToken: string | null
+  ): Promise<Record<string, unknown>>;
+
+  /** Cihaz durumu — token içermez. */
+  bridgeDurum(): Promise<Record<string, unknown>>;
+
+  /** Cihaz bağlantısını kapat. */
+  bridgeDurdur(): Promise<Record<string, unknown>>;
 }
 
 declare global {

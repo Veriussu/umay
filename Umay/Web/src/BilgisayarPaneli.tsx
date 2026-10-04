@@ -16,7 +16,15 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { masaustuMu, yetenekleriOku, type YetenekRaporu } from "./lib/umayDesktop";
+import {
+  masaustuMu,
+  yetenekleriOku,
+  cihazDurumuOku,
+  cihazBaglat,
+  type YetenekRaporu,
+  type CihazDurumu,
+} from "./lib/umayDesktop";
+import { getAccessToken, getRefreshToken } from "./lib/api";
 
 const YETENEK_ETIKET: Record<string, string> = {
   screen_observe: "Ekranı gör",
@@ -55,17 +63,45 @@ const TON: Record<string, string> = {
 export function BilgisayarPaneli({ compact = false }: { compact?: boolean }) {
   const [rapor, setRapor] = useState<YetenekRaporu | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
+  const [cihaz, setCihaz] = useState<CihazDurumu | null>(null);
+  const [baglaniyor, setBaglaniyor] = useState(false);
+  const [baglantiHatasi, setBaglantiHatasi] = useState<string | null>(null);
 
   const yenile = useCallback(async () => {
     setYukleniyor(true);
     const veri = await yetenekleriOku();
     setRapor(veri);
+    const d = await cihazDurumuOku();
+    setCihaz(d);
     setYukleniyor(false);
   }, []);
 
   useEffect(() => {
     if (masaustuMu()) void yenile();
   }, [yenile]);
+
+  const bagla = useCallback(async () => {
+    setBaglaniyor(true);
+    setBaglantiHatasi(null);
+    const sonuc = await cihazBaglat(getAccessToken(), getRefreshToken());
+    if (!sonuc) {
+      setBaglantiHatasi("Cihaz bağlantısı kurulamadı.");
+    } else if (!sonuc.basarili) {
+      // NEDEN GÖSTERİLİYOR — sessiz hata en kötü davranıştır.
+      setBaglantiHatasi(
+        sonuc.mesaj ||
+          sonuc.stderr ||
+          sonuc.hata ||
+          (sonuc.sonHata?.length ? sonuc.sonHata.join(" · ") : "Bağlantı kurulamadı.")
+      );
+    } else {
+      setCihaz(sonuc.durum ?? null);
+    }
+    setBaglaniyor(false);
+    void yenile();
+  }, [yenile]);
+
+  const cihazBagli = Boolean(cihaz?.deviceId) && Boolean(cihaz?.calisiyor);
 
   // --- Tarayıcı modu ------------------------------------------------
   if (!masaustuMu()) {
@@ -125,6 +161,50 @@ export function BilgisayarPaneli({ compact = false }: { compact?: boolean }) {
         >
           Yenile
         </button>
+      </div>
+
+      {/* Cihaz bağlantısı ----------------------------------------------------
+          *
+          * Bu, yetenek listesinden ÖNCE gelmeli. Çünkü cihaz backend'e
+          * eşleşmemişse yetenekler yeşil görünse bile Umay bu bilgisayara
+          * komut gönderemez — plan oluşur, görev kuyrukta kalır, hiçbir
+          * şey olmaz. 2026-10-05'te ölçülen tam olarak buydu:
+          *   agent_devices → 0 kayıt, computer görevi QUEUED.
+          */}
+      <div
+        className={`mt-3 rounded-xl border px-3 py-2.5 text-xs ${
+          cihazBagli
+            ? "border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-100"
+            : "border-amber-400/25 bg-amber-400/[0.07] text-amber-100"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-medium">
+              {cihazBagli ? "Bu bilgisayar Umay'a bağlı" : "Bu bilgisayar Umay'a bağlı değil"}
+            </div>
+            <div className="mt-0.5 text-[11px] opacity-80">
+              {cihazBagli
+                ? `Cihaz #${cihaz?.deviceId} · ${cihaz?.cihazAdi || ""} · komut kanalı açık`
+                : "Bağlanmadan önceki yetenekler yalnızca bu panelde çalışır; Umay senin bilgisayarını kullanamaz."}
+            </div>
+          </div>
+          {!cihazBagli && (
+            <button
+              onClick={() => void bagla()}
+              disabled={baglaniyor}
+              className="shrink-0 rounded-lg border border-amber-300/40 bg-amber-300/10 px-2.5 py-1 text-[11px] font-medium text-amber-50 hover:bg-amber-300/20 disabled:opacity-50"
+            >
+              {baglaniyor ? "Bağlanıyor…" : "Bağlan"}
+            </button>
+          )}
+        </div>
+
+        {baglantiHatasi && (
+          <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/25 p-2 text-[10px] leading-relaxed text-amber-50/90">
+            {baglantiHatasi}
+          </pre>
+        )}
       </div>
 
       {/* Durum özeti: en kritik bilgi — ekran ve fare çalışıyor mu? */}
