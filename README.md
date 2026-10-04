@@ -23,34 +23,57 @@ kullanıcının bilgisayarda olmaz.
 
 ## Kurulum
 
-### Ubuntu
+### Tek komut (tüm işletim sistemleri)
 
 ```bash
-npm install        # Electron indirir, sandbox izinlerini düzeltir
+git clone https://github.com/Veriussu/umay.git
+cd umay/Umay/Web
+bash kur.sh
+npm run uygulama
+```
+
+`kur.sh` her şeyi yapar:
+
+- Node.js sürümünü kontrol eder (22+ gerekir)
+- Grafik oturumu var mı bakar
+- Bağımlılıkları kurar
+- Electron'u indirir (npm 11 kurulum betiklerini engellediği için
+  elle indirir)
+- **sandbox izinlerini düzeltir** (Linux'ta zorunlu)
+- Arayüzü derler
+
+İlk kurulumda şifre sorabilir — bu normaldir (sandbox düzeltmesi
+`sudo` ister).
+
+### Elle kurulum
+
+```bash
+npm install
 npm run build
 npm run uygulama
 ```
 
-**İlk kurulumda şifre sorulabilir** — `npm install` sonunda çalışan
-sandbox düzeltmesi `sudo` ister. Bu normaldir.
-
-Elle düzeltmek gerekirse:
+Bu yol **sandbox hatası verir**. Çözümü:
 
 ```bash
 npm run sandbox:duzelt
 ```
 
-Bu komut şunu yapar ve uygulama ancak bundan sonra başlar:
+### Sık çıkan hata: sandbox
+
+```
+The SUID sandbox helper binary was found, but is not configured correctly
+```
+
+`npm install`, Electron'un `chrome-sandbox` dosyasındaki `setuid`
+bitini düşürüyor. Bit olmadan Electron güvenlikten ödün vermeyi
+reddeder ve uygulamayı **başlatmaz**. `kur.sh` bunu otomatik
+çözer; elle çalışıyorsan:
 
 ```bash
 sudo chown root:root node_modules/electron/dist/chrome-sandbox
 sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
 ```
-
-Neden gerekli: `npm install` her çalıştığında bu dosyanın `setuid`
-bitini düşürüyor. Bit olmadan Electron güvenlikten ödün vermeyi
-reddeder ve uygulamayı başlatmaz. `postinstall` betiği bunu
-otomatik düzeltir.
 
 ### Paket oluşturma
 
